@@ -3,44 +3,62 @@ const url = require('url');
 
 const handlers = {};
 
-handlers.newbies = (res) =>{
-    res.end(`Hello newbies Route`);
-}
+handlers.newbies = (parsedReq, res) =>{
+    const methods = {
+        'get': (parsedReq, res) => res.end('GET'),
+        'post': (parsedReq, res) => res.end('POST'),
+        'put': (parsedReq, res) => res.end('PUT'),
+        'delete': (parsedReq, res) => res.end('DELETE'),
+    };
 
-handlers.notFound = (res) => {
+    const routeHandler = getMethodHandler(parsedReq.method, methods);
+    routeHandler(parsedReq, res);
+};
+
+const getMethodHandler = (method, methods) => {
+    const acceptedMethods = Object.keys(methods);
+    if (acceptedMethods.includes(method)) {
+        return methods[method];
+    } else {
+        return (parsedReq, res) => {
+            res.writeHead(400);
+            res.end(`Non accepted method...`);
+        };
+    }
+};
+
+handlers.notFound = (parsedReq, res) => {
     res.writeHead(404);
     res.end(`Route does not exist...`);
-}
+};
 
 const routes = {
     'newbies': handlers.newbies
-}
+};
 
 const server = http.createServer((req, res) => {
-    // Parsing request URL
     const parsedUrl = url.parse(req.url, true);
-    const parsedReq = {};
-
-    parsedReq.parsedUrl = url.parse(req.url, true);
-    parsedReq.path = parsedReq.parsedUrl.pathname;
-    parsedReq.timmedPath = parsedReq.path.replace(/^\//, '');
-    parsedReq.method = req.method.toLowerCase();
-    parsedReq.headers = req.headers;
-    parsedReq.queryStringObject = parsedReq.parsedUrl.query;
+    const parsedReq = {
+        parsedUrl,
+        path: parsedUrl.pathname,
+        timmedPath: parsedUrl.pathname.replace(/^\//, ''),
+        method: req.method.toLowerCase(),
+        headers: req.headers,
+        queryStringObject: parsedUrl.query,
+    };
 
     let body = [];
 
-    req.on('data',(chunk) => {
+    req.on('data', (chunk) => {
         body.push(chunk);
     });
 
-    req.on('end',() => {
+    req.on('end', () => {
         body = Buffer.concat(body).toString();
         parsedReq.body = body;
 
-        const routeHandler = typeof(routes[parsedReq.timmedPath]) !== 'undefined' ? routes[parsedReq.timmedPath] : handlers.notFound;
-
-        routeHandler(res);
+        const routeHandler = routes[parsedReq.timmedPath] || handlers.notFound;
+        routeHandler(parsedReq, res);
     });
 });
 

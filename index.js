@@ -1,6 +1,21 @@
 const http = require('http');
 const url = require('url');
 
+const handlers = {};
+
+handlers.newbies = (res) =>{
+    res.end(`Hello newbies Route`);
+}
+
+handlers.notFound = (res) => {
+    res.writeHead(404);
+    res.end(`Route does not exist...`);
+}
+
+const routes = {
+    'newbies': handlers.newbies
+}
+
 const server = http.createServer((req, res) => {
     // Parsing request URL
     const parsedUrl = url.parse(req.url, true);
@@ -23,6 +38,10 @@ const server = http.createServer((req, res) => {
         body = Buffer.concat(body).toString();
         parsedReq.body = body;
         res.end(parsedReq.body);
+
+        const routeHandler = typeof(router[parsedReq.timmedPath]) !== 'undefined' ? router[parsedReq.timmedPath] : handlers.notFound;
+
+        routeBlender(res);
     });
 
 

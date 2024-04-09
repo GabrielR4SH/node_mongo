@@ -37,14 +37,11 @@ const server = http.createServer((req, res) => {
     req.on('end',() => {
         body = Buffer.concat(body).toString();
         parsedReq.body = body;
-        res.end(parsedReq.body);
 
-        const routeHandler = typeof(router[parsedReq.timmedPath]) !== 'undefined' ? router[parsedReq.timmedPath] : handlers.notFound;
+        const routeHandler = typeof(routes[parsedReq.timmedPath]) !== 'undefined' ? routes[parsedReq.timmedPath] : handlers.notFound;
 
-        routeBlender(res);
+        routeHandler(res);
     });
-
-
 });
 
 server.listen(3000, () => console.log("Listening on port 3000"));
